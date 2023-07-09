@@ -84,7 +84,6 @@ for image_batch, labels_batch in train_ds:
 [data visualization] 
 """
 
-
 plt.figure(figsize=(10, 10))
 for images, labels in train_ds.take(1):
   for i in range(9):
@@ -104,52 +103,22 @@ AUTOTUNE = tf.data.AUTOTUNE
 train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
 val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
 
+## 필터 개수가 변경되는 잔차 블록
+def get_model1():
 
-### 3가지 모두 적용하기 with ConvNet --> Xception 유사 모델.
+    inputs = keras.Input(shape=(180, 180, 3))
 
-## 데이터 증식단계 추가하기
-data_augmentation = keras.Sequential(
-    [
-        layers.RandomFlip('horizontal'),
-        layers.RandomRotation(0.1),
-        layers.RandomZoom(0.2),
-    ]
-)
+    ## 잔차를 따로 저장
+    x = layers.Conv2D(32, 3, activation='relu', padding='same')(inputs)
+    residual = x
 
+    ## 출력 필터 32 --> 64 증가 / same padding으로 다운샘플링 방지
+    x = layers.Conv2D(64, 3, activation='relu', padding='same')(x)
 
-img_size=(180, 180, 3)
-def get_model3():
+    ## 잔차가 32개 필터이기에 동일하게 하기 위해 잔차 층 수정.
+    residual = layers.Conv2D(64, 1)(residual)
 
-    inputs = keras.Input(shape=img_size)
-
-    # x = data_augmentation(inputs)           ## 데이터 증식.
-    # x = layers.Rescaling(1./255)(x)         ## 입력 데이터 normalization
-
-    ## RGB 채널은 높은 상관관계 --> 모델의 첫번째 층 일반적으로 Conv2D 설계
-    ## 이 후에 SeparableConv2D 설계
-    x = layers.Conv2D(filters=32, kernel_size=5, use_bias=False)(inputs)
-
-    for size in [32, 64, 128, 256, 512]:
-
-        residual = x
-
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation('relu')(x)
-        x = layers.SeparableConv2D(size, 3, padding='same', use_bias=False)(x)
-
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation('relu')(x)
-        x = layers.SeparableConv2D(size, 3, padding='same', use_bias=False)(x)
-
-        x = layers.MaxPooling2D(3, strides=2, padding='same')(x)
-
-        residual = layers.Conv2D(size, 1, strides=2, padding='same',
-                                 use_bias=False)(residual)
-
-        x = layers.add([x, residual])
-
-    x = layers.GlobalAveragePooling2D()(x)
-    x = layers.Dropout(0.5)(x)
+    x = layers.add([x, residual])
 
     outputs = layers.Dense(1, activation='sigmoid')(x)
 
@@ -158,7 +127,7 @@ def get_model3():
     return model
 
 
-model = get_model3()
+model = get_model1()
 model.summary()
 # keras.utils.plot_model(model, show_shapes=True)
 
