@@ -103,31 +103,42 @@ AUTOTUNE = tf.data.AUTOTUNE
 train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
 val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
 
-## 필터 개수가 변경되는 잔차 블록
-def get_model1():
 
-    inputs = keras.Input(shape=(180, 180, 3))
 
-    ## 잔차를 따로 저장
-    x = layers.Conv2D(32, 3, activation='relu', padding='same')(inputs)
+inputs = keras.Input(shape=(180, 180, 3))
+
+## nomalization
+x = layers.Rescaling(1./255)(inputs)
+
+def residual_block(x, filters, pooling=False):
     residual = x
 
-    ## 출력 필터 32 --> 64 증가 / same padding으로 다운샘플링 방지
-    x = layers.Conv2D(64, 3, activation='relu', padding='same')(x)
+    x = layers.Conv2D(filters, 3, activation='relu', padding='same')(x)
+    x = layers.Conv2D(filters, 3, activation='relu', padding='same')(x)
 
-    ## 잔차가 32개 필터이기에 동일하게 하기 위해 잔차 층 수정.
-    residual = layers.Conv2D(64, 1)(residual)
+    ## MaxPooling2D를 사용할 경우
+    if pooling:
+        x = layers.MaxPooling2D(2, padding='same')(x)
+        residual = layers.Conv2D(filters, 1, strides=2)(residual)
+
+    ## MaxPooling2D를 사용하지 않을 경우
+    elif filters != residual.shape[-1]:                 ## filters 갯수와 residual 모양이 다름
+        residual = layers.Conv2D(filters, 1)(residual)
 
     x = layers.add([x, residual])
 
-    outputs = layers.Dense(1, activation='sigmoid')(x)
+    return x
 
-    model = keras.Model(inputs=inputs, outputs=outputs)
+x = residual_block(x, filters=32, pooling=True)
+x = residual_block(x, filters=64, pooling=True)
+x = residual_block(x, filters=128, pooling=False)
+## 마지막 블록 바로 전에 globalaverage pooling 사용으로 인해 pooling 필요하지 않음.
 
-    return model
+x = layers.GlobalAveragePooling2D()(x)
 
+outputs = layers.Dense(1, activation='sigmoid')(x)
 
-model = get_model1()
+model = keras.Model(inputs=inputs, outputs=outputs)
 model.summary()
 # keras.utils.plot_model(model, show_shapes=True)
 
