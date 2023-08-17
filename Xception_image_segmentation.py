@@ -105,6 +105,7 @@ val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
 
 
 
+
 inputs = keras.Input(shape=(180, 180, 3))
 
 ## nomalization
@@ -128,6 +129,8 @@ def residual_block(x, filters, pooling=False):
     x = layers.add([x, residual])
 
     return x
+
+
 
 x = residual_block(x, filters=32, pooling=True)
 x = residual_block(x, filters=64, pooling=True)
@@ -160,3 +163,4 @@ history = model.fit(train_ds,
                     callbacks=callbacks,
                     batch_size=32,
                     validation_data=val_ds)
+
