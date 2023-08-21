@@ -106,27 +106,6 @@ class ResidualCNN:
         x = layers.Conv2D(filters=256, kernel_size=3, activation='relu')(x)
         x = layers.Flatten()(x)
 
-        # def residual_block(x, filters, pooling=False):
-        #     residual = x
-        #     x = layers.Conv2D(filters, 3, activation='relu', padding='same')(x)
-        #     x = layers.Conv2D(filters, 3, activation='relu', padding='same')(x)
-        #
-        #     if pooling:
-        #         x = layers.MaxPooling2D(2, padding='same')(x)
-        #         residual = layers.Conv2D(filters, 1, strides=2)(residual)
-        #     elif filters != residual.shape[-1]:
-        #         residual = layers.Conv2D(filters, 1)(residual)
-        #
-        #     x = layers.add([x, residual])
-        #
-        #     return x
-        #
-        # x = residual_block(x, filters=32, pooling=True)
-        # x = residual_block(x, filters=64, pooling=True)
-        # x = residual_block(x, filters=128, pooling=False)
-        #
-        # x = layers.GlobalAveragePooling2D()(x)
-
         outputs = layers.Dense(1, activation='sigmoid')(x)
 
         self.model = keras.Model(inputs=inputs, outputs=outputs)

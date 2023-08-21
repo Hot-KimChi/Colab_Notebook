@@ -90,8 +90,27 @@ class ResidualCNN:
             pass
 
 
+    def data_augmentation(self, check=False):
+        keras.Sequential(
+            [
+                layers.RandomFlip('horizontal'),
+                layers.RandomRotation(0.1),
+                layers.RandomZoom(0.2)
+            ]
+        )
+
+        if check == 'Yes':
+            plt.figure(figsize=(10, 10))
+            for images, _ in self.train_ds.take(1):
+                for i in range(9):
+                    augmented_images =
+
+
+
     def build_model(self):
         inputs = keras.Input(shape=(180, 180, 3))
+
+        x = self.data_augmentation(inputs)
 
         x = layers.Rescaling(1. / 255)(inputs)
         x = layers.Conv2D(filters=32, kernel_size=3, activation='relu')(x)
