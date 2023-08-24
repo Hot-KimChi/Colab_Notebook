@@ -121,8 +121,7 @@ class ResidualCNN:
 
         x = self.data_augmentation(inputs, check=aug_check)
 
-        x = layers.Rescaling(1. / 255)(x)
-
+        x = layers.Rescaling(1. / 255)(inputs)
         x = layers.Conv2D(filters=32, kernel_size=3, activation='relu')(x)
         x = layers.MaxPooling2D(pool_size=2)(x)
         x = layers.Conv2D(filters=64, kernel_size=3, activation='relu')(x)
@@ -131,10 +130,30 @@ class ResidualCNN:
         x = layers.MaxPooling2D(pool_size=2)(x)
         x = layers.Conv2D(filters=256, kernel_size=3, activation='relu')(x)
         x = layers.MaxPooling2D(pool_size=2)(x)
-        x = layers.Conv2D(filters=256, kernel_size=3, activation='relu')(x)
 
+        x = layers.Conv2D(filters=256, kernel_size=3, activation='relu')(x)
         x = layers.Flatten()(x)
-        x = layers.Dropout(0.5)(x)
+
+        # def residual_block(x, filters, pooling=False):
+        #     residual = x
+        #     x = layers.Conv2D(filters, 3, activation='relu', padding='same')(x)
+        #     x = layers.Conv2D(filters, 3, activation='relu', padding='same')(x)
+        #
+        #     if pooling:
+        #         x = layers.MaxPooling2D(2, padding='same')(x)
+        #         residual = layers.Conv2D(filters, 1, strides=2)(residual)
+        #     elif filters != residual.shape[-1]:
+        #         residual = layers.Conv2D(filters, 1)(residual)
+        #
+        #     x = layers.add([x, residual])
+        #
+        #     return x
+        #
+        # x = residual_block(x, filters=32, pooling=True)
+        # x = residual_block(x, filters=64, pooling=True)
+        # x = residual_block(x, filters=128, pooling=False)
+        #
+        # x = layers.GlobalAveragePooling2D()(x)
 
         outputs = layers.Dense(1, activation='sigmoid')(x)
 
@@ -204,7 +223,7 @@ residual_cnn.download_and_extract()
 residual_cnn.prepare_data()
 residual_cnn.visualize_data(check=False)
 residual_cnn.build_model(check=True)
-residual_cnn.train_model(epochs=1)
+residual_cnn.train_model(epochs=100)
 residual_cnn.plot_model_summary()
 residual_cnn.plot_training_history()
 residual_cnn.test_evaluation()
